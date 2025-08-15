@@ -1,37 +1,71 @@
 # src/utils/timestamps.py
-from typing import List, Optional
-from dataclasses import dataclass
+from typing import List, Dict
+
+def hhmmss(seconds: float) -> str:
+    """
+    Convert seconds (int/float) to HH:MM:SS string, rounding to nearest second.
+    """
+    secs = int(round(seconds))
+    h = secs // 3600
+    m = (secs % 3600) // 60
+    s = secs % 60
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
+def estimate_segment_durations(segments_text: List[str], wpm: int = 150) -> List[int]:
+    """
+    Estimate speaking duration per segment in seconds based on words-per-minute.
+    seconds = words * (60 / wpm)
+    """
+    seconds_per_word = 60.0 / max(wpm, 1)
+    durations = []
+    for text in segments_text:
+        word_count = max(len(text.split()), 1)
+        durations.append(int(round(word_count * seconds_per_word)))
+    return durations
+
+def cumulative_timestamps(durations: List[int], intro_pad: int = 0) -> List[str]:
+    """
+    Given a list of segment durations (in seconds), return start timestamps for each segment,
+    accounting for an intro padding in seconds (intro_pad).
+    Example: durations [30, 40], intro_pad=10 -> starts ["00:00:10", "00:00:40"]
+    """
+    stamps = []
+    elapsed = int(round(intro_pad))
+    for d in durations:
+        stamps.append(hhmmss(elapsed))
+        elapsed += int(d)
+    return stamps
 
 def snap_notes_to_segments(
-    notes: List[dict],
+    notes: List[Dict],
     seg_starts_hhmmss: List[str],
-) -> List[dict]:
+) -> List[Dict]:
     """
-    For any note with time==None, assign the closest earlier segment start.
-    If no segment start exists yet, fallback to 00:00:00.
+    For any note with time==None, set time to the closest *earlier* segment start.
+    If nothing earlier, fallback to "00:00:00".
     """
     def to_secs(hms: str) -> int:
         h, m, s = map(int, hms.split(":"))
-        return h*3600 + m*60 + s
+        return h * 3600 + m * 60 + s
 
-    # Precompute seconds
-    seg_starts_secs = [to_secs(t) for t in seg_starts_hhmmss]
-    if not seg_starts_secs:
-        seg_starts_secs = [0]
+    # Ensure at least intro exists
+    if not seg_starts_hhmmss:
         seg_starts_hhmmss = ["00:00:00"]
 
-    last_start_idx = 0
+    seg_starts_secs = [to_secs(t) for t in seg_starts_hhmmss]
+
+    current_idx = 0
     for n in notes:
-        if n.get("time") is None:
-            # use current "last" start
-            n["time"] = seg_starts_hhmmss[last_start_idx]
+        t = n.get("time")
+        if t is None:
+            # assign current segment start
+            n["time"] = seg_starts_hhmmss[current_idx]
         else:
-            # advance last_start_idx if this explicit note time passes a segment start
+            # advance current_idx if time passes next segment boundary
             try:
-                t = to_secs(n["time"])
-                while last_start_idx + 1 < len(seg_starts_secs) and t >= seg_starts_secs[last_start_idx + 1]:
-                    last_start_idx += 1
+                ts = to_secs(t)
+                while current_idx + 1 < len(seg_starts_secs) and ts >= seg_starts_secs[current_idx + 1]:
+                    current_idx += 1
             except Exception:
-                # if parsing fails, just set to current last start
-                n["time"] = seg_starts_hhmmss[last_start_idx]
+                n["time"] = seg_starts_hhmmss[current_idx]
     return notes
