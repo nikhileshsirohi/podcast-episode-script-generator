@@ -140,3 +140,6 @@ async def generate_from_file(
         ingest_cache[cache_key] = content
 
     return _generate_from_source_text(content, payload)
+
+    # uvicorn src.main:app --reload
+    # python -m http.server 5500
