@@ -1,87 +1,96 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <title>Podcast Episode Script Generator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="./style.css" />
+    <meta charset="utf-8" />
+    <title>Podcast Episode Script Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body>
-  <header>
-    <h1>Podcast Episode Script Generator</h1>
-    <p class="sub">Turn raw text or a URL into a podcast script + show notes</p>
-  </header>
+    <header>
+        <h1>Podcast Episode Script Generator</h1>
+        <p class="sub">Turn raw text or a URL into a podcast script + show notes</p>
+    </header>
 
-  <main>
-    <section class="card">
-      <div class="mode">
-        <label><input type="radio" name="mode" value="text" checked> Text</label>
-        <label><input type="radio" name="mode" value="url"> URL</label>
-        <label><input type="radio" name="mode" value="file"> File (txt/pdf)</label>
-      </div>
+    <main>
+        <section class="card">
+            <div class="mode">
+                <label><input type="radio" name="mode" value="text" checked> Text</label>
+                <label><input type="radio" name="mode" value="url"> URL</label>
+                <label><input type="radio" name="mode" value="file"> File (txt/pdf)</label>
+            </div>
 
-      <div id="text-inputs" class="inputs">
-        <textarea id="text" rows="8" placeholder="Paste your article/speech text here..."></textarea>
-      </div>
+            <div id="text-inputs" class="inputs">
+                <textarea id="text" rows="8" placeholder="Paste your article/speech text here..."></textarea>
+            </div>
 
-      <div id="url-inputs" class="inputs hidden">
-        <input id="url" type="url" placeholder="https://example.com/news-article" />
-      </div>
+            <div id="url-inputs" class="inputs hidden">
+                <input id="url" type="url" placeholder="https://example.com/news-article" />
+            </div>
 
-      <div id="file-inputs" class="inputs hidden">
-        <input id="file" type="file" accept=".txt,.pdf" />
-      </div>
+            <div id="file-inputs" class="inputs hidden">
+                <input id="file" type="file" accept=".txt,.pdf" />
+            </div>
 
-      <div class="grid">
-        <div>
-          <label>Model</label>
-          <select id="model">
-            <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-            <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-          </select>
-        </div>
-        <div>
-          <label>Max Words</label>
-          <input id="max_words" type="number" value="1200" min="200" max="2500"/>
-        </div>
-        <div>
-          <label>Speaking WPM</label>
-          <input id="speaking_wpm" type="number" value="150" min="80" max="220"/>
-        </div>
-        <div class="checkbox">
-          <label><input id="include_timestamps" type="checkbox" checked /> Include timestamps</label>
-        </div>
-      </div>
+            <div class="grid">
+                <div>
+                    <label>Model</label>
+                    <select id="model">
+                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Max Words</label>
+                    <input id="max_words" type="number" value="1200" min="200" max="2500" />
+                </div>
+                <div>
+                    <label>Speaking WPM</label>
+                    <input id="speaking_wpm" type="number" value="150" min="80" max="220" />
+                </div>
+                <div class="checkbox">
+                    <label><input id="include_timestamps" type="checkbox" checked /> Include timestamps</label>
+                </div>
+            </div>
 
-      <button id="generateBtn">Generate Script</button>
-      <div id="status" class="status"></div>
-    </section>
+            <button id="generateBtn">Generate Script</button>
+            <div id="status" class="status"></div>
+            <div class="actions hidden" id="actions">
+                <button id="copyScriptBtn" class="secondary">Copy Script</button>
+                <button id="copyNotesBtn" class="secondary">Copy Show Notes</button>
+                <button id="downloadMdBtn" class="secondary">Export as Markdown</button>
+                <a class="link" href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">Open API docs ↗</a>
+            </div>
+        </section>
 
-    <section id="result" class="card hidden">
-      <h2 id="r-title"></h2>
-      <div class="split">
-        <div class="col">
-          <h3>Intro</h3>
-          <p id="r-intro"></p>
+        <section id="result" class="card hidden">
+            <h2 id="r-title"></h2>
+            <div class="split">
+                <div class="col">
+                    <h3>Intro</h3>
+                    <p id="r-intro"></p>
 
-          <h3>Segments</h3>
-          <div id="r-segments"></div>
+                    <h3>Segments</h3>
+                    <div id="r-segments"></div>
 
-          <h3>Outro</h3>
-          <p id="r-outro"></p>
-        </div>
-        <div class="col">
-          <h3>Show Notes</h3>
-          <ul id="r-notes" class="notes"></ul>
-        </div>
-      </div>
-    </section>
-  </main>
+                    <h3>Outro</h3>
+                    <p id="r-outro"></p>
+                </div>
+                <div class="col">
+                    <h3>Show Notes</h3>
+                    <ul id="r-notes" class="notes"></ul>
+                </div>
+            </div>
+        </section>
+    </main>
 
-  <footer>
-    <small>Backend: FastAPI • LLM: Gemini • Built by you 🚀</small>
-  </footer>
+    <footer>
+        <small>Backend: FastAPI • LLM: Gemini • Built by Nikhilesh 🚀</small>
+    </footer>
 
-  <script src="./app.js"></script>
+    <script src="./app.js"></script>
 </body>
+
 </html>

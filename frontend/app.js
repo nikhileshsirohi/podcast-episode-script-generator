@@ -24,6 +24,11 @@ const rSegs = document.getElementById("r-segments");
 const rOutro = document.getElementById("r-outro");
 const rNotes = document.getElementById("r-notes");
 
+const actions = document.getElementById("actions");
+const copyScriptBtn = document.getElementById("copyScriptBtn");
+const copyNotesBtn  = document.getElementById("copyNotesBtn");
+const downloadMdBtn = document.getElementById("downloadMdBtn");
+
 modeRadios.forEach(r => r.addEventListener("change", () => {
   const v = document.querySelector('input[name="mode"]:checked').value;
   textInputs.classList.toggle("hidden", v !== "text");
@@ -117,4 +122,126 @@ btn.addEventListener("click", async () => {
   } finally {
     btn.disabled = false;
   }
+});
+
+let lastResponse = null; // keep the latest API response for export/copy
+
+function buildMarkdownFromResponse(data) {
+  const lines = [];
+  lines.push(`# ${data.title || "Podcast Episode"}`);
+  lines.push("");
+  lines.push("## Intro");
+  lines.push(data.intro || "");
+  lines.push("");
+
+  lines.push("## Segments");
+  (data.segments || []).forEach((s, i) => {
+    lines.push(`### ${i+1}. ${s.heading || "Segment"}`);
+    lines.push(s.content || "");
+    lines.push("");
+  });
+
+  lines.push("## Outro");
+  lines.push(data.outro || "");
+  lines.push("");
+
+  lines.push("## Show Notes");
+  (data.show_notes || []).forEach(n => {
+    const t = n.time ? `**[${n.time}]** ` : "";
+    lines.push(`- ${t}${n.note}`);
+  });
+  lines.push("");
+
+  return lines.join("\n");
+}
+
+function buildPlainScript(data) {
+  const lines = [];
+  lines.push(`${data.title || "Podcast Episode"}`);
+  lines.push("".padEnd(40, "="));
+  lines.push("");
+  lines.push("INTRO:");
+  lines.push(data.intro || "");
+  lines.push("");
+
+  (data.segments || []).forEach((s, i) => {
+    lines.push(`SEGMENT ${i+1}: ${s.heading || "Segment"}`);
+    lines.push(s.content || "");
+    lines.push("");
+  });
+
+  lines.push("OUTRO:");
+  lines.push(data.outro || "");
+  lines.push("");
+  return lines.join("\n");
+}
+
+function buildPlainNotes(data) {
+  const lines = [];
+  (data.show_notes || []).forEach(n => {
+    const t = n.time ? `[${n.time}] ` : "";
+    lines.push(`${t}${n.note}`);
+  });
+  return lines.join("\n");
+}
+
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function renderResult(data) {
+  lastResponse = data; // store for exports
+
+  resultSec.classList.remove("hidden");
+  actions.classList.remove("hidden");
+
+  rTitle.textContent = data.title || "Podcast Episode";
+  rIntro.textContent = data.intro || "";
+
+  rSegs.innerHTML = "";
+  (data.segments || []).forEach(seg => {
+    const div = document.createElement("div");
+    div.className = "seg";
+    div.innerHTML = `<h4>${seg.heading || "Segment"}</h4><p>${seg.content || ""}</p>`;
+    rSegs.appendChild(div);
+  });
+
+  rOutro.textContent = data.outro || "";
+
+  rNotes.innerHTML = "";
+  (data.show_notes || []).forEach(n => {
+    const li = document.createElement("li");
+    const time = n.time ? `<span class="t">${n.time}</span>` : "";
+    li.innerHTML = `${time}<span>${n.note}</span>`;
+    rNotes.appendChild(li);
+  });
+}
+
+// --- button handlers ---
+copyScriptBtn.addEventListener("click", async () => {
+  if (!lastResponse) return;
+  const text = buildPlainScript(lastResponse);
+  await navigator.clipboard.writeText(text);
+  statusEl.textContent = "Script copied to clipboard.";
+});
+
+copyNotesBtn.addEventListener("click", async () => {
+  if (!lastResponse) return;
+  const text = buildPlainNotes(lastResponse);
+  await navigator.clipboard.writeText(text);
+  statusEl.textContent = "Show notes copied to clipboard.";
+});
+
+downloadMdBtn.addEventListener("click", () => {
+  if (!lastResponse) return;
+  const md = buildMarkdownFromResponse(lastResponse);
+  const safeTitle = (lastResponse.title || "podcast-episode").toLowerCase().replace(/[^a-z0-9\-]+/g, "-");
+  downloadText(`${safeTitle}.md`, md);
 });
