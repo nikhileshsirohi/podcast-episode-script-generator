@@ -4,7 +4,13 @@
 ### Backend
 ```bash
 python3 -m venv .venv  
+
+# For Mac
 source .venv/bin/activate
+
+# For Window
+.venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 
 # .env
